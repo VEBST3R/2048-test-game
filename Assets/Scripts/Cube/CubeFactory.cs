@@ -15,6 +15,10 @@ public class CubeFactory : MonoBehaviour, ICubeFactory
     [SerializeField] private float cubeBounciness = 0.05f;
     [SerializeField] private float cubeFriction = 0.8f;
 
+    [Header("Audio Settings")]
+    [SerializeField] private AudioClip cubeToCubeSound;
+    [SerializeField] private AudioClip cubeToWallSound;
+
     private const string CUBE_POOL_TAG = "Cube";
 
     public GameObject GetCube(Vector3 position, Quaternion rotation, Transform parent = null)
@@ -49,7 +53,6 @@ public class CubeFactory : MonoBehaviour, ICubeFactory
             rb.mass = cubeMass;
 
             rb.constraints = RigidbodyConstraints.None;
-
         }
 
         Collider[] colliders = cube.GetComponents<Collider>();
@@ -73,8 +76,25 @@ public class CubeFactory : MonoBehaviour, ICubeFactory
                 }
             }
         }
-    }
 
+        // Додаємо або отримуємо компонент для обробки звуків
+        CubeAudioHandler audioHandler = cube.GetComponent<CubeAudioHandler>();
+        if (audioHandler == null)
+        {
+            audioHandler = cube.AddComponent<CubeAudioHandler>();
+
+            // Встановлюємо звуки, якщо вони задані
+            var audioHandlerField = typeof(CubeAudioHandler).GetField("cubeToCubeCollisionSound",
+                                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (audioHandlerField != null && cubeToCubeSound != null)
+                audioHandlerField.SetValue(audioHandler, cubeToCubeSound);
+
+            audioHandlerField = typeof(CubeAudioHandler).GetField("cubeToWallCollisionSound",
+                               System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (audioHandlerField != null && cubeToWallSound != null)
+                audioHandlerField.SetValue(audioHandler, cubeToWallSound);
+        }
+    }
 
     public void SetRandomValue(GameObject cube, float probability2 = 0.75f)
     {

@@ -243,7 +243,7 @@ GameObject:
   - component: {fileID: 176107553}
   m_Layer: 0
   m_Name: Left
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -282,8 +282,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 4.6603746, z: 1}
+  m_Center: {x: 0, y: 1.830188, z: 0}
 --- !u!23 &176107554
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1105,7 +1105,7 @@ GameObject:
   - component: {fileID: 749030459}
   m_Layer: 0
   m_Name: Right
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1144,8 +1144,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 4.6506343, z: 1}
+  m_Center: {x: 0, y: 1.8253212, z: 0}
 --- !u!23 &749030460
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1393,7 +1393,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1056035965}
-  - component: {fileID: 1056035966}
+  - component: {fileID: 1056035967}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -1416,7 +1416,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1056035966
+--- !u!114 &1056035967
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1425,17 +1425,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1056035963}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0b29b36142c068e4aacf19f3b030f3a6, type: 3}
+  m_Script: {fileID: 11500000, guid: 888631cb28c6abc4d8f379b750adb3e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   uiManager: {fileID: 1899220629}
   cubeController: {fileID: 1234064282}
   cubesParentContainer: {fileID: 1234064281}
   maxCubesOnScreen: 24
-  gameOverHeight: 4
-  cubeLayer:
-    serializedVersion: 2
-    m_Bits: 8
 --- !u!1 &1081105960
 GameObject:
   m_ObjectHideFlags: 0
@@ -1708,7 +1704,7 @@ GameObject:
   - component: {fileID: 1234064286}
   m_Layer: 0
   m_Name: Cubes
-  m_TagString: Cube
+  m_TagString: GameController
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1770,9 +1766,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cubePrefab: {fileID: 6664758224567763057, guid: 60d55f84fa976ca489068d0884322555, type: 3}
   lowBounceMaterial: {fileID: 0}
-  cubeDrag: 0.5
-  cubeAngularDrag: 0.2
+  cubeDrag: 0.01
+  cubeAngularDrag: 0.01
   cubeMass: 10
+  cubeBounciness: 0.05
+  cubeFriction: 0.2
+  cubeToCubeSound: {fileID: 8300000, guid: 6718c44cdb989c441a128935e5443f78, type: 3}
+  cubeToWallSound: {fileID: 8300000, guid: 95aea5b773f25214abe5690099c62f18, type: 3}
 --- !u!114 &1234064286
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2493,18 +2493,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c96e79cac513b2047a5be8ccf207e532, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gamePlayPanel: {fileID: 0}
   gameOverPanel: {fileID: 1466756099}
   winPanel: {fileID: 249115841}
   scoreText: {fileID: 1892879268}
-  highScoreText: {fileID: 0}
-  scoreAddedText: {fileID: 0}
   cubeCountText: {fileID: 2082579041}
   gameOverScoreText: {fileID: 2064834120}
   winScoreText: {fileID: 309447339}
   restartButton: {fileID: 1722253350}
   continueButton: {fileID: 1952505178}
   winRestartButton: {fileID: 1081105962}
+  gameStateManager: {fileID: 1056035967}
 --- !u!1 &1952505176
 GameObject:
   m_ObjectHideFlags: 0
@@ -3048,7 +3046,7 @@ GameObject:
   - component: {fileID: 2102282217}
   m_Layer: 0
   m_Name: Front
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3087,8 +3085,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 4.6670175, z: 1}
+  m_Center: {x: 0, y: 1.8335098, z: 0}
 --- !u!23 &2102282218
 MeshRenderer:
   m_ObjectHideFlags: 0

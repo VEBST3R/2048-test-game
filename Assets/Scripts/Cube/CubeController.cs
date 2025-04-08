@@ -1,8 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Відповідає за керування поточним кубом та створення нових
-/// </summary>
 [RequireComponent(typeof(CubeInputHandler))]
 public class CubeController : MonoBehaviour
 {
@@ -25,19 +22,16 @@ public class CubeController : MonoBehaviour
     {
         Initialize();
 
-        // Підписуємося на події вводу
         if (inputHandler != null)
         {
             inputHandler.OnLaunchCube += LaunchCubeForward;
         }
 
-        // Створюємо перший куб
         SpawnNewCube();
     }
 
     private void OnDestroy()
     {
-        // Відписуємося від подій
         if (inputHandler != null)
         {
             inputHandler.OnLaunchCube -= LaunchCubeForward;
@@ -48,7 +42,6 @@ public class CubeController : MonoBehaviour
     {
         if (isInitialized) return;
 
-        // Отримуємо фабрику кубів
         if (cubeFactory == null)
         {
             var factoryComponent = GetComponent<CubeFactory>();
@@ -62,27 +55,35 @@ public class CubeController : MonoBehaviour
         isInitialized = true;
     }
 
+    public GameObject GetCurrentCube()
+    {
+        return currentCube;
+    }
+
     public void LaunchCubeForward()
     {
         if (currentCubeRigidbody == null) return;
 
-        // Додаємо силу для запуску вперед
+        if (currentCube != null)
+        {
+            currentCube.tag = "Cube";
+        }
+
         currentCubeRigidbody.AddForce(Vector3.forward * movementSettings.ForwardForce, ForceMode.Impulse);
 
-        // Викликаємо створення нового куба з затримкою
         Invoke(nameof(SpawnNewCube), movementSettings.SpawnDelay);
 
-        // Скидаємо посилання
         currentCube = null;
         currentCubeRigidbody = null;
     }
 
     public void SpawnNewCube()
     {
-        // Перевіряємо, чи немає активного куба
-        if (currentCube != null) return;
+        if (currentCube != null)
+        {
+            return;
+        }
 
-        // Переконуємося, що фабрика ініціалізована
         if (!isInitialized)
         {
             Initialize();
@@ -90,27 +91,61 @@ public class CubeController : MonoBehaviour
 
         if (cubeFactory == null)
         {
-            Debug.LogError("[CubeController] Cube factory is null!");
-            return;
+            cubeFactory = FindFirstObjectByType<CubeFactory>();
+
+            if (cubeFactory == null)
+            {
+                cubeFactory = gameObject.AddComponent<CubeFactory>();
+            }
         }
 
-        // Отримуємо контейнер для кубів
-        Transform cubesContainer = GameManager.Instance?.GetCubesContainer();
+        if (spawnPoint == null)
+        {
+            GameObject spawnObj = new GameObject("SpawnPoint");
+            spawnObj.transform.parent = transform;
+            spawnObj.transform.localPosition = new Vector3(0, 5, 0);
+            spawnPoint = spawnObj.transform;
+        }
 
-        // Створюємо новий куб
+        Transform cubesContainer = GameStateManager.Instance?.GetCubesContainer();
+
         currentCube = cubeFactory.GetCube(spawnPoint.position, Quaternion.identity, cubesContainer);
 
         if (currentCube != null)
         {
+            if (GameStateManager.Instance != null)
+            {
+                if (GameStateManager.Instance.CheckForTooManyCubes())
+                {
+                    return;
+                }
+            }
+
+            currentCube.tag = "CurrentCube";
+
+            if (cubesContainer != null && currentCube.transform.parent != cubesContainer)
+            {
+                currentCube.transform.SetParent(cubesContainer);
+            }
+
             currentCubeRigidbody = currentCube.GetComponent<Rigidbody>();
             cubeFactory.SetRandomValue(currentCube, movementSettings.Probability2);
 
-            // Повідомляємо обробник вводу про новий куб
-            inputHandler?.SetCurrentCube(currentCube);
+            if (inputHandler != null)
+            {
+                inputHandler.SetCurrentCube(currentCube);
+            }
+            else
+            {
+            }
+
+            if (GameStateManager.Instance != null)
+            {
+                GameStateManager.Instance.CheckForTooManyCubes();
+            }
         }
         else
         {
-            Debug.LogError("[CubeController] Failed to create a new cube!");
         }
     }
 }

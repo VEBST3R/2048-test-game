@@ -2,16 +2,11 @@ using UnityEngine;
 using System;
 using System.Collections;
 
-/// <summary>
-/// Відповідає за процес злиття кубів
-/// </summary>
 public class CubeMergeHandler : MonoBehaviour
 {
     public event Action<GameObject, GameObject> OnCubeMerged;
 
     [SerializeField] private float minCollisionForce = 2f;
-    [SerializeField] private GameObject mergeEffectPrefab;
-
     private CubeFacade cubeFacade;
     private bool hasBeenMerged = false;
 
@@ -29,16 +24,13 @@ public class CubeMergeHandler : MonoBehaviour
 
         if (!otherFacade) return;
 
-        // Діагностичне повідомлення
         Debug.Log($"Collision: This={cubeFacade.GetValue()}, Other={otherFacade.GetValue()}, " +
                  $"Force={collision.relativeVelocity.magnitude}, ThisMerged={hasBeenMerged}, " +
                  $"OtherMerged={otherFacade.GetMergeHandler().IsMerged()}");
 
-        // Перевірка сили зіткнення
         float requiredForce = cubeFacade.GetValue() <= 4 ? minCollisionForce * 0.7f : minCollisionForce;
         if (collision.relativeVelocity.magnitude < requiredForce) return;
 
-        // Перевірка на можливість злиття
         CubeMergeHandler otherHandler = otherFacade.GetMergeHandler();
         if (!otherHandler) return;
 
@@ -50,44 +42,35 @@ public class CubeMergeHandler : MonoBehaviour
 
     private void MergeWithCube(CubeFacade otherFacade)
     {
-        // Встановлюємо флаги злиття
         hasBeenMerged = true;
         otherFacade.GetMergeHandler().SetMerged(true);
 
-        // Збільшуємо значення
         int newValue = cubeFacade.GetValue() * 2;
         cubeFacade.SetValue(newValue);
 
-        // Запускаємо анімацію
         cubeFacade.GetAnimationController().PlayMergeAnimation();
 
-        // Створюємо ефект злиття
-        if (mergeEffectPrefab != null)
-        {
-            Instantiate(mergeEffectPrefab, transform.position, Quaternion.identity);
-        }
-
-        // Сповіщаємо про злиття
         OnCubeMerged?.Invoke(gameObject, otherFacade.gameObject);
 
-        // Нараховуємо очки
-        IScoreManager scoreManager = GameManager.Instance;
+        IScoreManager scoreManager = GameStateManager.Instance;
         if (scoreManager != null)
         {
             scoreManager.AddScore(newValue / 2);
 
-            // Перевіряємо умову перемоги
             if (newValue >= 2048)
             {
-                IGameStateManager gameStateManager = GameManager.Instance;
+                IGameStateManager gameStateManager = GameStateManager.Instance;
                 if (gameStateManager != null)
                 {
                     gameStateManager.WinGame();
                 }
             }
         }
+        else
+        {
+            Debug.LogError("ScoreManager не знайдено! Очки не будуть додані.");
+        }
 
-        // Вимикаємо інший куб і повертаємо в пул
         DisableCubeComponents(otherFacade.gameObject);
 
         if (ObjectPooler.Instance != null)
@@ -99,7 +82,6 @@ public class CubeMergeHandler : MonoBehaviour
             Destroy(otherFacade.gameObject);
         }
 
-        // Скидаємо стан злиття
         Invoke(nameof(ResetMergeState), 0.1f);
     }
 

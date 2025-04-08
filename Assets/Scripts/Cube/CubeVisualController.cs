@@ -1,9 +1,6 @@
 using UnityEngine;
 using TMPro;
 
-/// <summary>
-/// Відповідає за візуальне відображення кубика
-/// </summary>
 [RequireComponent(typeof(CubeValue))]
 public class CubeVisualController : MonoBehaviour
 {

@@ -3,21 +3,62 @@ using System;
 using System.Collections;
 using UnityEngine.SceneManagement;
 
-public class GameStateManager : MonoBehaviour, IGameStateManager
+public class GameStateManager : MonoBehaviour, IGameStateManager, IScoreManager
 {
+    private static GameStateManager _instance;
+    private static bool _applicationIsQuitting = false;
+
+    public static GameStateManager Instance
+    {
+        get
+        {
+            if (_applicationIsQuitting)
+            {
+                Debug.LogWarning("[Singleton] Instance of GameStateManager already destroyed on application quit. Won't create again.");
+                return null;
+            }
+
+            if (_instance == null)
+            {
+                _instance = FindFirstObjectByType<GameStateManager>();
+
+                if (_instance == null)
+                {
+                    GameObject singleton = new GameObject();
+                    _instance = singleton.AddComponent<GameStateManager>();
+                    singleton.name = "(singleton) GameStateManager";
+                }
+            }
+
+            return _instance;
+        }
+    }
+
+    [Header("Dependencies")]
+    [SerializeField] private UIManager uiManager;
+    [SerializeField] private CubeController cubeController;
+    [SerializeField] private Transform cubesParentContainer;
+
+    [Header("Game Settings")]
+    [SerializeField] private int maxCubesOnScreen = 15;
+    public int MaxCubesOnScreen => maxCubesOnScreen;
+
     public event Action OnGameStart;
     public event Action<string> OnGameOver;
     public event Action OnGameWin;
 
-    [SerializeField] private int maxCubesOnScreen = 15;
-    [SerializeField] private float gameOverHeight = 4f;
-    [SerializeField] private LayerMask cubeLayer;
-    [SerializeField] private CubeController cubeController;
+    public event Action<int> OnScoreChanged;
+    public event Action<int, int> OnScoreUIUpdated;
 
     private bool _isGameOver = false;
     private bool _isGameActive = false;
-
     private GameState _currentState;
+
+    private int _currentScore = 0;
+    private int _highScore = 0;
+    private const string HighScoreKey = "HighScore2048";
+
+    private GameObject _protectedCube;
 
     public bool IsGameActive => _isGameActive;
 
@@ -30,46 +71,123 @@ public class GameStateManager : MonoBehaviour, IGameStateManager
         Win
     }
 
+    private void Awake()
+    {
+        if (_instance != null && _instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        _instance = this;
+        DontDestroyOnLoad(gameObject);
+        if (cubesParentContainer == null)
+        {
+            GameObject container = new GameObject("Cubes_Container");
+            cubesParentContainer = container.transform;
+            DontDestroyOnLoad(container);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        _applicationIsQuitting = true;
+    }
+
     private void Start()
     {
         _currentState = GameState.MainMenu;
+        _highScore = PlayerPrefs.GetInt(HighScoreKey, 0);
+
+        if (uiManager == null)
+        {
+            uiManager = FindFirstObjectByType<UIManager>();
+        }
+
+        UpdateScoreUI();
+        StartGame();
     }
 
     public void StartGame()
     {
-        // Скидання ігрових змінних
         _isGameOver = false;
         _isGameActive = true;
         _currentState = GameState.Playing;
+        _protectedCube = null;
 
-        // Очищення сцени
-        ClearAllCubes();
+        ResetScore();
 
-        // Активація контролера
-        if (cubeController != null)
-        {
-            cubeController.enabled = true;
-        }
+        StartCoroutine(CleanAndSpawn());
 
-        // Запуск перевірки умови програшу
         StartCoroutine(CheckGameOverCondition());
 
-        // Сповіщення підписників
         OnGameStart?.Invoke();
     }
 
-    private void ClearAllCubes()
+    private IEnumerator CleanAndSpawn()
     {
-        GameObject[] cubes = GameObject.FindGameObjectsWithTag("Cube");
-        foreach (GameObject cube in cubes)
+        ClearAllCubes();
+
+        yield return new WaitForEndOfFrame();
+
+        UpdateCubeCountUI();
+
+        CreateInitialCube();
+    }
+
+    private void CreateInitialCube()
+    {
+        if (cubeController == null)
         {
-            if (ObjectPooler.Instance != null)
+            cubeController = FindFirstObjectByType<CubeController>();
+        }
+
+        if (cubeController == null)
+        {
+            Debug.LogError("[GameStateManager] CubeController не знайдено! Гра не може продовжуватись без нього.");
+            return;
+        }
+
+        cubeController.enabled = true;
+
+        var inputHandler = cubeController.GetComponent<CubeInputHandler>();
+        if (inputHandler != null)
+        {
+            inputHandler.enabled = true;
+        }
+        else
+        {
+            Debug.LogWarning("[GameStateManager] InputHandler не знайдено!");
+        }
+
+        try
+        {
+            cubeController.SpawnNewCube();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[GameStateManager] Помилка при створенні нового куба: {e.Message}");
+        }
+    }
+
+    private IEnumerator SaveProtectedCubeReference()
+    {
+        yield return new WaitForSeconds(0.1f);
+
+        if (cubeController != null)
+        {
+            var methodInfo = cubeController.GetType().GetMethod("GetCurrentCube");
+            if (methodInfo != null)
             {
-                ObjectPooler.Instance.ReturnToPool("Cube", cube);
+                _protectedCube = methodInfo.Invoke(cubeController, null) as GameObject;
+                if (_protectedCube != null)
+                {
+                    Debug.Log($"[GameStateManager] Захищено куб від знищення: {_protectedCube.name}");
+                }
             }
             else
             {
-                Destroy(cube);
+                Debug.LogWarning("[GameStateManager] У CubeController немає методу GetCurrentCube!");
             }
         }
     }
@@ -82,17 +200,33 @@ public class GameStateManager : MonoBehaviour, IGameStateManager
         _isGameOver = true;
         _currentState = GameState.GameOver;
 
-        // Виводимо причину завершення гри
         Debug.LogWarning(reason);
 
-        // Деактивація контролера
+        if (uiManager != null)
+        {
+            StartCoroutine(ShowGameOverPanelNextFrame(reason));
+        }
+
         if (cubeController != null)
         {
             cubeController.enabled = false;
+
+            var inputHandler = cubeController.GetComponent<CubeInputHandler>();
+            if (inputHandler != null)
+            {
+                inputHandler.enabled = false;
+            }
         }
 
-        // Сповіщення підписників
         OnGameOver?.Invoke(reason);
+    }
+
+    private IEnumerator ShowGameOverPanelNextFrame(string reason)
+    {
+        yield return null;
+
+        uiManager.ShowGameOverPanel();
+        Debug.Log($"[GameStateManager] Показано панель завершення гри. Причина: {reason}");
     }
 
     public void WinGame()
@@ -102,13 +236,16 @@ public class GameStateManager : MonoBehaviour, IGameStateManager
 
         _currentState = GameState.Win;
 
-        // Деактивація контролера
+        if (uiManager != null)
+        {
+            uiManager.ShowWinPanel();
+        }
+
         if (cubeController != null)
         {
             cubeController.enabled = false;
         }
 
-        // Сповіщення підписників
         OnGameWin?.Invoke();
     }
 
@@ -119,7 +256,6 @@ public class GameStateManager : MonoBehaviour, IGameStateManager
 
         _currentState = GameState.Playing;
 
-        // Активація контролера 
         if (cubeController != null)
         {
             cubeController.enabled = true;
@@ -128,77 +264,298 @@ public class GameStateManager : MonoBehaviour, IGameStateManager
 
     public void RestartGame()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        Debug.Log("Перезапуск гри");
+
+        StopAllCoroutines();
+
+        ClearAllCubes(forceDestroy: true);
+
+        _isGameOver = false;
+        _isGameActive = false;
+        _currentScore = 0;
+        _currentState = GameState.MainMenu;
+
+        uiManager = FindFirstObjectByType<UIManager>();
+        cubeController = FindFirstObjectByType<CubeController>();
+
+        if (uiManager != null)
+        {
+            uiManager.HideAllPanels();
+            UpdateScoreUI();
+        }
+
+        StartCoroutine(DelayedGameStart());
+    }
+
+    private IEnumerator DelayedGameStart()
+    {
+        Debug.Log("[GameStateManager] Відкладений запуск гри...");
+        yield return new WaitForSeconds(0.3f);
+
+        CheckSceneObjects();
+
+        if (cubeController == null)
+        {
+            cubeController = FindFirstObjectByType<CubeController>();
+            Debug.Log("[GameStateManager] Знайдений CubeController: " + (cubeController != null ? "Так" : "Ні"));
+
+            if (cubeController == null)
+            {
+                Debug.LogWarning("[GameStateManager] Створюємо новий CubeController...");
+                GameObject controllerObj = new GameObject("CubeController");
+                cubeController = controllerObj.AddComponent<CubeController>();
+                controllerObj.AddComponent<CubeInputHandler>();
+                controllerObj.AddComponent<CubeFactory>();
+            }
+        }
+
+        StartGame();
+    }
+
+    private void CheckSceneObjects()
+    {
+        Debug.Log("[GameStateManager] Перевірка об'єктів сцени...");
+
+        CubeController[] controllers = FindObjectsByType<CubeController>(FindObjectsSortMode.None);
+        Debug.Log($"[GameStateManager] Знайдено CubeController: {controllers.Length}");
+
+        bool hasPooler = ObjectPooler.Instance != null;
+        Debug.Log($"[GameStateManager] ObjectPooler доступний: {hasPooler}");
+
+        GameObject[] cubes = GameObject.FindGameObjectsWithTag("Cube");
+        Debug.Log($"[GameStateManager] Знайдено кубів на сцені: {cubes.Length}");
     }
 
     private IEnumerator CheckGameOverCondition()
     {
+        yield return new WaitForSeconds(0.3f);
+
         while (!_isGameOver && _isGameActive)
         {
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.5f);
 
             int activeCubeCount = CountActiveCubes();
-            Debug.Log($"Активних кубів: {activeCubeCount}/{maxCubesOnScreen}");
+
+            UpdateCubeCountUI(activeCubeCount);
 
             if (activeCubeCount > maxCubesOnScreen)
             {
                 GameOver($"Гра завершена: забагато кубів на сцені ({activeCubeCount} > {maxCubesOnScreen})");
-                continue;
-            }
-
-            Collider[] hitColliders = Physics.OverlapBox(
-                new Vector3(0, gameOverHeight, 0),
-                new Vector3(5, 0.5f, 5),
-                Quaternion.identity,
-                cubeLayer
-            );
-
-            if (hitColliders.Length > 0)
-            {
-                GameOver($"Гра завершена: куби досягли критичної висоти ({gameOverHeight})");
+                break;
             }
         }
     }
 
-    private int CountActiveCubes()
+    private IEnumerator VerifyCubeClearance()
+    {
+        yield return new WaitForSeconds(0.1f);
+
+        try
+        {
+            GameObject[] remainingCubes = GameObject.FindGameObjectsWithTag("Cube");
+            if (remainingCubes == null || remainingCubes.Length == 0)
+                yield break;
+
+            int cubesNeedingCleanup = 0;
+            foreach (GameObject cube in remainingCubes)
+            {
+                if (cube == null)
+                    continue;
+
+                if (cube == _protectedCube)
+                {
+                    Debug.Log($"[GameStateManager] Пропускаємо захищений куб: {cube.name}");
+                    continue;
+                }
+
+                if (cubeController != null)
+                {
+                    GameObject currentCube = null;
+
+                    var methodInfo = cubeController.GetType().GetMethod("GetCurrentCube");
+                    if (methodInfo != null)
+                    {
+                        currentCube = methodInfo.Invoke(cubeController, null) as GameObject;
+                    }
+
+                    if (currentCube == cube)
+                    {
+                        Debug.Log($"[GameStateManager] Пропускаємо поточний куб контролера: {cube.name}");
+                        continue;
+                    }
+                }
+
+                if (cube.activeInHierarchy)
+                {
+                    cubesNeedingCleanup++;
+                    Debug.Log($"[GameStateManager] Знищуємо куб: {cube.name}");
+                    Destroy(cube);
+                }
+            }
+
+            if (cubesNeedingCleanup > 0)
+            {
+                Debug.LogWarning($"[GameStateManager] Знищено {cubesNeedingCleanup} залишкових кубів");
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[GameStateManager] Помилка при очищенні кубів: {e.Message}");
+        }
+    }
+
+    #region Score Management
+
+    public void ResetScore()
+    {
+        _currentScore = 0;
+        UpdateScoreUI();
+        OnScoreChanged?.Invoke(_currentScore);
+    }
+
+    public int GetCurrentScore()
+    {
+        return _currentScore;
+    }
+
+    public int GetHighScore()
+    {
+        return _highScore;
+    }
+
+    public void AddScore(int points)
+    {
+        _currentScore += points;
+
+        if (_currentScore > _highScore)
+        {
+            _highScore = _currentScore;
+            PlayerPrefs.SetInt(HighScoreKey, _highScore);
+            PlayerPrefs.Save();
+        }
+
+        UpdateScoreUI();
+        OnScoreChanged?.Invoke(_currentScore);
+    }
+
+    public Transform GetCubesContainer()
+    {
+        return cubesParentContainer;
+    }
+
+    private void UpdateScoreUI()
+    {
+        if (uiManager != null)
+        {
+            uiManager.UpdateScoreUI(_currentScore, _highScore);
+            OnScoreUIUpdated?.Invoke(_currentScore, _highScore);
+        }
+    }
+
+    #endregion
+
+    #region Cube Management
+
+    private void ClearAllCubes(bool forceDestroy = false)
+    {
+        GameObject[] cubes = GameObject.FindGameObjectsWithTag("Cube");
+        Debug.Log($"Знайдено {cubes.Length} кубів для очищення");
+
+        foreach (GameObject cube in cubes)
+        {
+            if (cube != null)
+            {
+                if (forceDestroy || ObjectPooler.Instance == null)
+                {
+                    Debug.Log($"Знищення куба: {cube.name}");
+                    Destroy(cube);
+                }
+                else
+                {
+                    DisableCubeComponents(cube);
+
+                    Debug.Log($"Повернення куба в пул: {cube.name}");
+                    ObjectPooler.Instance.ReturnToPool("Cube", cube);
+                }
+            }
+        }
+
+        StartCoroutine(VerifyCubeClearance());
+    }
+
+    private void DisableCubeComponents(GameObject cube)
+    {
+        if (cube == null) return;
+
+        Collider[] colliders = cube.GetComponentsInChildren<Collider>();
+        foreach (Collider col in colliders)
+        {
+            if (col != null) col.enabled = false;
+        }
+
+        Rigidbody rb = cube.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
+        CubeFacade facade = cube.GetComponent<CubeFacade>();
+        if (facade != null)
+        {
+            facade.SetInPool(true);
+        }
+    }
+
+    private void UpdateCubeCountUI(int activeCubes = -1)
+    {
+        if (uiManager != null)
+        {
+            if (activeCubes < 0)
+            {
+                activeCubes = CountActiveCubes();
+            }
+
+            uiManager.UpdateCubeCountUI(activeCubes, maxCubesOnScreen);
+        }
+    }
+
+    public int CountActiveCubes()
     {
         int count = 0;
         GameObject[] allCubes = GameObject.FindGameObjectsWithTag("Cube");
 
         foreach (GameObject cube in allCubes)
         {
-            if (cube.activeInHierarchy && !IsObjectInPool(cube) && cube.GetComponent<CubeValue>() != null)
+            if (cube.activeInHierarchy)
             {
-                count++;
+                CubeFacade facade = cube.GetComponent<CubeFacade>();
+                if (facade == null || !facade.IsInPool)
+                {
+                    count++;
+                }
             }
         }
 
         return count;
     }
 
-    private bool IsObjectInPool(GameObject obj)
+    public bool CheckForTooManyCubes()
     {
-        // Перевірка позиції
-        Vector3 pos = obj.transform.position;
-        if (pos.y < -10f || pos.x > 100f || pos.x < -100f || pos.z > 100f || pos.z < -100f)
-        {
-            return true;
-        }
+        int activeCubeCount = CountActiveCubes();
 
-        // Перевірка стану Rigidbody
-        Rigidbody rb = obj.GetComponent<Rigidbody>();
-        if (rb != null && rb.isKinematic)
-        {
-            return true;
-        }
+        UpdateCubeCountUI(activeCubeCount);
 
-        // Спочатку перевіряємо CubeFacade (новий підхід)
-        CubeFacade cubeFacade = obj.GetComponent<CubeFacade>();
-        if (cubeFacade != null && cubeFacade.IsInPool)
+        if (activeCubeCount > maxCubesOnScreen)
         {
+            Debug.LogWarning($"[GameStateManager] Критичне перевищення кількості кубів: {activeCubeCount} > {maxCubesOnScreen}");
+            GameOver($"Гра завершена: забагато кубів на сцені ({activeCubeCount} > {maxCubesOnScreen})");
             return true;
         }
 
         return false;
     }
+
+    #endregion
 }

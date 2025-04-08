@@ -1,9 +1,6 @@
 using UnityEngine;
 using System.Collections;
 
-/// <summary>
-/// Відповідає за анімації кубика
-/// </summary>
 public class CubeAnimationController : MonoBehaviour
 {
     [SerializeField] private float spawnAnimationDuration = 0.3f;

@@ -8,10 +8,9 @@ public class ScriptableObjectMenu : MonoBehaviour
     public static void CreateCubeMovementSettings()
     {
         CubeMovementSettings asset = ScriptableObject.CreateInstance<CubeMovementSettings>();
-        
+
         string path = "Assets/CubeMovementSettings.asset";
-        
-        // Перевірка, чи існує файл, якщо так, то додаємо число до імені
+
         if (System.IO.File.Exists(path))
         {
             int count = 1;
@@ -21,14 +20,13 @@ public class ScriptableObjectMenu : MonoBehaviour
                 count++;
             }
         }
-        
+
         AssetDatabase.CreateAsset(asset, path);
         AssetDatabase.SaveAssets();
-        
-        // Виділення створеного ассету
+
         EditorUtility.FocusProjectWindow();
         Selection.activeObject = asset;
-        
+
         Debug.Log("Created Cube Movement Settings at " + path);
     }
 }

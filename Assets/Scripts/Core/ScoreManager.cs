@@ -4,7 +4,7 @@ using System;
 public class ScoreManager : MonoBehaviour, IScoreManager
 {
     public event Action<int> OnScoreChanged;
-    public event Action<int, int> OnHighScoreChanged;
+    public event Action<int, int> OnScoreUIUpdated;
 
     private int _currentScore = 0;
     private int _highScore = 0;
@@ -19,7 +19,7 @@ public class ScoreManager : MonoBehaviour, IScoreManager
     public void LoadHighScore()
     {
         _highScore = PlayerPrefs.GetInt(HighScoreKey, 0);
-        OnHighScoreChanged?.Invoke(_currentScore, _highScore);
+        OnScoreUIUpdated?.Invoke(_currentScore, _highScore);
     }
 
     public int GetCurrentScore()
@@ -36,7 +36,6 @@ public class ScoreManager : MonoBehaviour, IScoreManager
     {
         _currentScore += points;
 
-        // Оновлення рекорду
         if (_currentScore > _highScore)
         {
             _highScore = _currentScore;
@@ -44,15 +43,14 @@ public class ScoreManager : MonoBehaviour, IScoreManager
             PlayerPrefs.Save();
         }
 
-        // Сповіщаємо про зміну рахунку
         OnScoreChanged?.Invoke(_currentScore);
-        OnHighScoreChanged?.Invoke(_currentScore, _highScore);
+        OnScoreUIUpdated?.Invoke(_currentScore, _highScore);
     }
 
     public void ResetScore()
     {
         _currentScore = 0;
         OnScoreChanged?.Invoke(_currentScore);
-        OnHighScoreChanged?.Invoke(_currentScore, _highScore);
+        OnScoreUIUpdated?.Invoke(_currentScore, _highScore);
     }
 }

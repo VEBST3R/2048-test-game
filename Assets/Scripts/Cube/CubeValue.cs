@@ -1,9 +1,6 @@
 using UnityEngine;
 using System;
 
-/// <summary>
-/// Відповідає тільки за зберігання значення кубика
-/// </summary>
 public class CubeValue : MonoBehaviour
 {
     public event Action<int> OnValueChanged;
