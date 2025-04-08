@@ -6,14 +6,11 @@ using System.Collections;
 public class UIManager : MonoBehaviour
 {
     [Header("UI Panels")]
-    [SerializeField] private GameObject gamePlayPanel;
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject winPanel;
 
     [Header("Score UI")]
     [SerializeField] private TextMeshProUGUI scoreText;
-    [SerializeField] private TextMeshProUGUI highScoreText;
-    [SerializeField] private TextMeshProUGUI scoreAddedText;
     [SerializeField] private TextMeshProUGUI cubeCountText;
 
     [Header("Game Over UI")]
@@ -27,32 +24,72 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button continueButton;
     [SerializeField] private Button winRestartButton;
 
+    private IGameStateManager _gameStateManager;
+    private IScoreManager _scoreManager;
+
     private void Start()
     {
-        // Ініціалізація кнопки рестарту
+        _gameStateManager = GameManager.Instance as IGameStateManager;
+        _scoreManager = GameManager.Instance as IScoreManager;
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnGameOver += HandleGameOver;
+            GameManager.Instance.OnGameWin += HandleGameWin;
+            GameManager.Instance.OnScoreChanged += HandleScoreChanged;
+        }
+
+        InitializeButtons();
+        HideAllPanels();
+    }
+
+    private void OnDestroy()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnGameOver -= HandleGameOver;
+            GameManager.Instance.OnGameWin -= HandleGameWin;
+            GameManager.Instance.OnScoreChanged -= HandleScoreChanged;
+        }
+    }
+
+    private void InitializeButtons()
+    {
         if (restartButton != null)
             restartButton.onClick.AddListener(OnRestartButtonClicked);
 
-        // Додаємо обробники для нових кнопок
         if (continueButton != null)
             continueButton.onClick.AddListener(OnContinueButtonClicked);
 
         if (winRestartButton != null)
             winRestartButton.onClick.AddListener(OnRestartButtonClicked);
+    }
 
-        // Приховуємо всі панелі крім ігрової на початку
-        if (gameOverPanel != null)
-            gameOverPanel.SetActive(false);
+    private void HideAllPanels()
+    {
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (winPanel != null) winPanel.SetActive(false);
+    }
 
-        if (winPanel != null)
-            winPanel.SetActive(false);
+    private void HandleGameOver(string reason)
+    {
+        ShowGameOverPanel();
+    }
+
+    private void HandleGameWin()
+    {
+        ShowWinPanel();
+    }
+
+    private void HandleScoreChanged(int newScore)
+    {
+        UpdateScoreUI(newScore, _scoreManager?.GetHighScore() ?? 0);
     }
 
     public void ShowGameOverPanel()
     {
         if (gameOverPanel != null)
         {
-            // Оновлюємо текст рахунку в панелі програшу
             if (gameOverScoreText != null)
             {
                 GameManager gameManager = FindFirstObjectByType<GameManager>();
@@ -63,7 +100,6 @@ public class UIManager : MonoBehaviour
             }
 
             gameOverPanel.SetActive(true);
-            // Додаємо анімацію появи панелі
             StartCoroutine(AnimatePanelScale(gameOverPanel));
         }
     }
@@ -72,28 +108,12 @@ public class UIManager : MonoBehaviour
     {
         if (scoreText != null)
             scoreText.text = "Score: " + score;
-
-        if (highScoreText != null)
-            highScoreText.text = "Record: " + highScore;
-    }
-
-    public void ShowScoreAdded(int points)
-    {
-        if (scoreAddedText != null)
-        {
-            scoreAddedText.text = "+" + points;
-            scoreAddedText.gameObject.SetActive(true);
-
-            // Приховування через деякий час
-            StartCoroutine(HideScoreAddedAfterDelay());
-        }
     }
 
     public void ShowWinPanel()
     {
         if (winPanel != null)
         {
-            // Оновлюємо текст рахунку в панелі виграшу
             if (winScoreText != null)
             {
                 GameManager gameManager = FindFirstObjectByType<GameManager>();
@@ -104,7 +124,6 @@ public class UIManager : MonoBehaviour
             }
 
             winPanel.SetActive(true);
-            // Додаємо анімацію появи панелі
             StartCoroutine(AnimatePanelScale(winPanel));
         }
     }
@@ -113,32 +132,20 @@ public class UIManager : MonoBehaviour
     {
         if (cubeCountText != null)
         {
-            // Змінюємо колір тексту залежно від наближення до максимуму
-            if (currentCount > maxCount * 0.8f) // Якщо більше 80% від максимуму
+            if (currentCount > maxCount * 0.8f)
             {
-                cubeCountText.color = Color.red; // Червоний колір для попередження
+                cubeCountText.color = Color.red;
             }
-            else if (currentCount > maxCount * 0.6f) // Якщо більше 60% від максимуму
+            else if (currentCount > maxCount * 0.6f)
             {
-                cubeCountText.color = new Color(1.0f, 0.5f, 0.0f); // Оранжевий колір
+                cubeCountText.color = new Color(1.0f, 0.5f, 0.0f);
             }
             else
             {
-                cubeCountText.color = Color.white; // Звичайний білий колір
+                cubeCountText.color = Color.white;
             }
 
-            // Форматуємо текст
             cubeCountText.text = $"Blocks: {currentCount}/{maxCount}";
-        }
-    }
-
-    private IEnumerator HideScoreAddedAfterDelay()
-    {
-        yield return new WaitForSeconds(1f);
-
-        if (scoreAddedText != null)
-        {
-            scoreAddedText.gameObject.SetActive(false);
         }
     }
 
@@ -170,28 +177,20 @@ public class UIManager : MonoBehaviour
 
     private void OnRestartButtonClicked()
     {
-        // Перезапуск гри
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
 
-        GameManager gameManager = FindFirstObjectByType<GameManager>();
-        if (gameManager != null)
-        {
-            gameManager.RestartGame();
-        }
+        if (winPanel != null)
+            winPanel.SetActive(false);
+
+        _gameStateManager?.RestartGame();
     }
 
     private void OnContinueButtonClicked()
     {
-        // Закриваємо панель перемоги
         if (winPanel != null)
             winPanel.SetActive(false);
 
-        // Продовжуємо гру
-        GameManager gameManager = FindFirstObjectByType<GameManager>();
-        if (gameManager != null)
-        {
-            gameManager.ContinueAfterWin();
-        }
+        _gameStateManager?.ContinueAfterWin();
     }
 }

@@ -174,7 +174,7 @@ MonoBehaviour:
   _SortingLayerID: 0
   _SortingOrder: 0
   m_hasFontAssetChanged: 0
-  m_renderer: {fileID: 1534166525324619032}
+  m_renderer: {fileID: 230039240838591402}
   m_maskType: 0
 --- !u!1 &4493197747872958043
 GameObject:
@@ -350,7 +350,7 @@ MonoBehaviour:
   _SortingLayerID: 0
   _SortingOrder: 0
   m_hasFontAssetChanged: 0
-  m_renderer: {fileID: 1534166525324619032}
+  m_renderer: {fileID: 2630185055856672458}
   m_maskType: 0
 --- !u!1 &4707713701193951027
 GameObject:
@@ -526,7 +526,7 @@ MonoBehaviour:
   _SortingLayerID: 0
   _SortingOrder: 0
   m_hasFontAssetChanged: 0
-  m_renderer: {fileID: 1534166525324619032}
+  m_renderer: {fileID: 6908179198663336598}
   m_maskType: 0
 --- !u!1 &5257198907346511557
 GameObject:
@@ -702,7 +702,7 @@ MonoBehaviour:
   _SortingLayerID: 0
   _SortingOrder: 0
   m_hasFontAssetChanged: 0
-  m_renderer: {fileID: 1534166525324619032}
+  m_renderer: {fileID: 5368472549116457228}
   m_maskType: 0
 --- !u!1 &6315900655540608786
 GameObject:
@@ -878,7 +878,7 @@ MonoBehaviour:
   _SortingLayerID: 0
   _SortingOrder: 0
   m_hasFontAssetChanged: 0
-  m_renderer: {fileID: 1534166525324619032}
+  m_renderer: {fileID: 1382468459692966341}
   m_maskType: 0
 --- !u!1 &6664758224567763057
 GameObject:
@@ -893,7 +893,11 @@ GameObject:
   - component: {fileID: 126259548402472430}
   - component: {fileID: 5911131330389535766}
   - component: {fileID: 7298694439645493774}
-  - component: {fileID: 2221169421346555066}
+  - component: {fileID: 9138598306205139621}
+  - component: {fileID: 718061591714467650}
+  - component: {fileID: 8958047073587300447}
+  - component: {fileID: 4010973358874778284}
+  - component: {fileID: 2660962377423352605}
   m_Layer: 3
   m_Name: Cube
   m_TagString: Cube
@@ -1022,8 +1026,21 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 3
---- !u!114 &2221169421346555066
+  m_CollisionDetection: 2
+--- !u!114 &9138598306205139621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6664758224567763057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29cf6a94b55324a4792b3920b1ac49a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  IsInPool: 0
+--- !u!114 &718061591714467650
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1035,7 +1052,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58358aec74b0f0c438e86db1d35790a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  value: 1024
+  value: 2
+--- !u!114 &8958047073587300447
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6664758224567763057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f4618d8ae84a7542afa602038139169, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   valueTexts:
   - {fileID: 2288973943820174484}
   - {fileID: 1303165846566257704}
@@ -1044,8 +1073,32 @@ MonoBehaviour:
   - {fileID: 595902613427558749}
   - {fileID: 4624793451014467261}
   meshRenderer: {fileID: 126259548402472430}
+--- !u!114 &4010973358874778284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6664758224567763057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0800afa4819a5c349be94eaa59e5e83b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   minCollisionForce: 2
   mergeEffectPrefab: {fileID: 0}
+--- !u!114 &2660962377423352605
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6664758224567763057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90b3c7462913d6d4d9c66102d1c33df9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   spawnAnimationDuration: 0.3
   spawnScaleCurve:
     serializedVersion: 2
@@ -1096,7 +1149,6 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  IsInPool: 0
 --- !u!1 &6819982756400627954
 GameObject:
   m_ObjectHideFlags: 0

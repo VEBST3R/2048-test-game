@@ -229,37 +229,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 85670383}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &101815313
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 101815314}
-  m_Layer: 0
-  m_Name: CubesPool
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &101815314
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 101815313}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1234064281}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &176107551
 GameObject:
   m_ObjectHideFlags: 0
@@ -1460,13 +1429,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   uiManager: {fileID: 1899220629}
+  cubeController: {fileID: 1234064282}
+  cubesParentContainer: {fileID: 1234064281}
   maxCubesOnScreen: 24
   gameOverHeight: 4
   cubeLayer:
     serializedVersion: 2
     m_Bits: 8
-  spawnPoint: {fileID: 253050168}
-  cubeController: {fileID: 1234064282}
 --- !u!1 &1081105960
 GameObject:
   m_ObjectHideFlags: 0
@@ -1735,7 +1704,8 @@ GameObject:
   - component: {fileID: 1234064281}
   - component: {fileID: 1234064282}
   - component: {fileID: 1234064284}
-  - component: {fileID: 1234064283}
+  - component: {fileID: 1234064285}
+  - component: {fileID: 1234064286}
   m_Layer: 0
   m_Name: Cubes
   m_TagString: Cube
@@ -1757,7 +1727,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 204892738}
-  - {fileID: 101815314}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1234064282
@@ -1774,28 +1743,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   movementSettings: {fileID: 11400000, guid: 0240a67da75fac848b02a87bae92d37e, type: 2}
   spawnPoint: {fileID: 204892738}
-  cubeFactory: {fileID: 1234064283}
-  cubeDrag: 0.5
-  cubeAngularDrag: 0.2
-  cubeMass: 10
---- !u!114 &1234064283
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1234064280}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 738dcf8b88cdb5041b5414f6ac01c283, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cubePrefab: {fileID: 6664758224567763057, guid: 60d55f84fa976ca489068d0884322555, type: 3}
-  lowBounceMaterial: {fileID: 13400000, guid: 9067f434d5836fb41945dac7c2dac375, type: 2}
-  cubeParent: {fileID: 1234064280}
-  cubeDrag: 0.5
-  cubeAngularDrag: 0.2
-  cubeMass: 10
 --- !u!114 &1234064284
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1809,6 +1756,36 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pools: []
+--- !u!114 &1234064285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1234064280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c935458eadc9ea0439281f0660d0dfc7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cubePrefab: {fileID: 6664758224567763057, guid: 60d55f84fa976ca489068d0884322555, type: 3}
+  lowBounceMaterial: {fileID: 0}
+  cubeDrag: 0.5
+  cubeAngularDrag: 0.2
+  cubeMass: 10
+--- !u!114 &1234064286
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1234064280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81d169c2d7680fe49813ec018a86a704, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementSettings: {fileID: 11400000, guid: 0240a67da75fac848b02a87bae92d37e, type: 2}
 --- !u!1 &1353861073
 GameObject:
   m_ObjectHideFlags: 0
