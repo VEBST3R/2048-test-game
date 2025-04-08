@@ -106,6 +106,8 @@ public class GameStateManager : MonoBehaviour, IGameStateManager, IScoreManager
 
         UpdateScoreUI();
         StartGame();
+
+        Application.targetFrameRate = 300;
     }
 
     public void StartGame()
